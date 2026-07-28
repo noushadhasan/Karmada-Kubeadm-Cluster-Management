@@ -1,0 +1,23 @@
+apiVersion: policy.karmada.io/v1alpha1
+kind: PropagationPolicy
+metadata:
+  name: default-apps-to-both-clusters
+  namespace: production
+spec:
+  conflictResolution: Overwrite
+  resourceSelectors:
+    - apiVersion: apps/v1
+      kind: Deployment
+    - apiVersion: v1
+      kind: Service
+    - apiVersion: networking.k8s.io/v1
+      kind: Ingress
+    - apiVersion: v1
+      kind: ConfigMap
+    - apiVersion: v1
+      kind: Secret
+  placement:
+    clusterAffinity:
+      clusterNames:
+        - dev-cluster
+        - uat-cluster
