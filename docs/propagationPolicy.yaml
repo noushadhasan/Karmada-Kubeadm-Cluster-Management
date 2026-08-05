@@ -19,5 +19,5 @@ spec:
   placement:
     clusterAffinity:
       clusterNames:
-        - dev-cluster
-        - uat-cluster
+        - cluster-1
+        - cluster-2
