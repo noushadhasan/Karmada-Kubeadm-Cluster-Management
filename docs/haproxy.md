@@ -3,7 +3,7 @@ Both clusters' ingress (LoadBalancer) IPs are port-forwarded to a single public 
 standalone HAProxy instance sits in front of those two ingress IPs and is the public entry point for all 
 HTTPS traffic. 
 
-![alt text](image.png)
+![alt text](image-1.png)
 
 # Install HAProxy 
 ```bash
