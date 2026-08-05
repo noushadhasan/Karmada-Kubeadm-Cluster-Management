@@ -1,4 +1,4 @@
-**Install Docker & kubectl 
+# Install Docker & kubectl 
 On the Karmada VM, update the system, install base packages, then Docker and kubectl:
 ```bash
 sudo apt update 
@@ -9,7 +9,7 @@ curl -fsSL https://get.docker.com | sh
 docker version
 ```
 
-Download and install the kubectl binary: 
+# Download and install the kubectl binary: 
 ```bash
 curl -LO "https://dl.k8s.io/release/$(curl -L -s \ 
   https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" 
@@ -18,7 +18,7 @@ chmod +x kubectl
 sudo mv kubectl /usr/local/bin/ 
 kubectl version --client 
 ```
-**Install the Karmada CLI
+# Install the Karmada CLI
 ```bash
 wget https://github.com/karmada-io/karmada/releases/\ 
 download/v1.15.1/karmadactl-linux-amd64.tgz 
@@ -27,8 +27,8 @@ tar -zxvf karmadactl-linux-amd64.tgz
 sudo mv karmadactl /usr/local/bin/ 
 karmadactl version
 ```
-*Create the Karmada Control Plane
-**Install K3s
+# Create the Karmada Control Plane
+# Install K3s
 ```bash
 curl -sfL https://get.k3s.io | sh - 
 
@@ -42,7 +42,7 @@ kubectl get nodes
 kubectl --kubeconfig=/etc/karmada/karmada-apiserver.config get clusters
 ```
 
-**Find the Karmada kubeconfig
+# Find the Karmada kubeconfig
 ```bash
 ls -lah /etc/karmada/ 
 kubectl --kubeconfig=/etc/karmada/karmada-apiserver.config get clusters 
