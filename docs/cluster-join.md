@@ -31,7 +31,10 @@ karmadactl join cluster-2 \
  kubectl --kubeconfig=/etc/karmada/karmada-apiserver.config get clusters 
  
  * get the target cluster context
+ ```bash
    kubectl config get-contexts --kubeconfig=/home/ibos/new-cluster.config 
+```
+
  * Unjoin the cluster 
  ```bash
  karmadactl unjoin cluster-2 \ 
@@ -39,4 +42,3 @@ karmadactl join cluster-2 \
   --cluster-context=kubernetes-admin@kubernetes \ 
   --kubeconfig=/etc/karmada/karmada-apiserver.config 
   ```
-  
