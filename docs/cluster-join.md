@@ -32,8 +32,8 @@ karmadactl join cluster-2 \
  
  * get the target cluster context
  ```bash
-   kubectl config get-contexts --kubeconfig=/home/ibos/new-cluster.config 
-   ```
+kubectl config get-contexts --kubeconfig=/home/ibos/new-cluster.config 
+```
 
  * Unjoin the cluster 
  ```bash
