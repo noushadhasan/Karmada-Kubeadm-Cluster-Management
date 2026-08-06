@@ -1,14 +1,15 @@
 # Direct Migration of Resources
 
-This guide walks through migrating workloads directly from `cluster-1` (old cluster) to `cluster-2` (new cluster) without going through Karmada propagation. Resources are exported as YAML from `cluster-1`, stripped of runtime metadata (resourceVersion, UID, status, etc.) using `kubectl-neat`, and then applied as-is to `cluster-2`.
+This guide walks through migrating workloads directly from `cluster-1` to `cluster-2` without going through Karmada propagation. Resources are exported as YAML from `cluster-1`, stripped of runtime metadata (resourceVersion, UID, status, etc.) using `kubectl-neat`, and then applied as-is to `cluster-2`.
 
-## Export resources as YAML from the old cluster
+## Export resources as YAML from the cluster-1
+* Run Below command on Karmada Control Plane
 ```bash
-mkdir -p /home/ibos/direct-migration/default
+mkdir -p /home/ubuntu/direct-migration/default
 
-kubectl --kubeconfig=/home/ibos/cluster-1.config -n default \
+kubectl --kubeconfig=/home/ubuntu/cluster-1.config -n default \
   get deploy,svc,ingress,configmap,secret -o yaml \
-  > /home/ibos/direct-migration/default/resources.yaml
+  > /home/ubuntu/direct-migration/default/resources.yaml
 ```
 
 ## Clean the metadata
@@ -23,26 +24,26 @@ mv kubectl-neat /usr/local/bin/
 ```
 Then clean the exported file:
 ```bash
-kubectl neat < /home/ibos/direct-migration/default/resources.yaml \
-  > /home/ibos/direct-migration/default/resources-clean.yaml
+kubectl neat < /home/ubuntu/direct-migration/default/resources.yaml \
+  > /home/ubuntu/direct-migration/default/resources-clean.yaml
 ```
 
-## Apply to the new cluster
+## Apply to the cluster-2
 * Dry-run first
 ```bash
-kubectl --kubeconfig=/home/ibos/cluster-2.config apply \
-  -f /home/ibos/direct-migration/default/resources-clean.yaml \
+kubectl --kubeconfig=/home/ubuntu/cluster-2.config apply \
+  -f /home/ubuntu/direct-migration/default/resources-clean.yaml \
   --dry-run=server
 ```
 * Then apply for real
 ```bash
-kubectl --kubeconfig=/home/ibos/cluster-2.config apply \
-  -f /home/ibos/direct-migration/default/resources-clean.yaml
+kubectl --kubeconfig=/home/ubuntu/cluster-2.config apply \
+  -f /home/ubuntu/direct-migration/default/resources-clean.yaml
 ```
 
-## Check the new cluster
+## Check the cluster-2
 ```bash
-kubectl --kubeconfig=/home/ibos/cluster-2.config -n default \
+kubectl --kubeconfig=/home/ubuntu/cluster-2.config -n default \
   get pods,svc,ingress
 ```
 
