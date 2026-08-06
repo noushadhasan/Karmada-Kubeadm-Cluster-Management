@@ -175,7 +175,6 @@ A complete step-by-step deployment guide is included in this repository.
 | [Karmada Configuration](docs/karmada-configuration.md) | Move workloads between clusters |
 | [HAProxy](docs/haproxy.md) | Configure Load Balancer |
 
-GitHub automatically makes those links clickable.
 
 ---
 
