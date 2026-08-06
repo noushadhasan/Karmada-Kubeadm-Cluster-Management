@@ -20,7 +20,7 @@ In this project I configured:
 - ✅ HAProxy Load Balancer
 - ✅ Centralized application management
 
-The control plane distributes workloads across both Kubernetes clusters while HAProxy exposes them through a single public endpoint. :contentReference[oaicite:1]{index=1}
+The control plane distributes workloads across both Kubernetes clusters while HAProxy exposes them through a single public endpoint.
 
 ---
 
@@ -113,7 +113,7 @@ Join both Kubernetes clusters using:
 
 - karmadactl join
 
-After joining, Karmada manages both clusters from a single control plane. :contentReference[oaicite:2]{index=2}
+After joining, Karmada manages both clusters from a single control plane.
 
 ---
 
@@ -129,7 +129,7 @@ Resources included:
 - ConfigMap
 - Secret
 
-Whenever these resources are created on Karmada, they are automatically synchronized across all member clusters. :contentReference[oaicite:3]{index=3}
+Whenever these resources are created on Karmada, they are automatically synchronized across all member clusters.
 
 ---
 
@@ -153,31 +153,9 @@ Supported modes:
 - Weighted Distribution
 - Backup Server (Failover)
 
-:contentReference[oaicite:4]{index=4}
-
 ---
 
-# 📁 Repository Structure
-
-```
-.
-├── manifests/
-│   ├── deployment.yaml
-│   ├── service.yaml
-│   ├── ingress.yaml
-│   ├── configmap.yaml
-│   ├── secret.yaml
-│   └── propagationPolicy.yaml
-│
-├── docs/
-│   └── Karmada_Install_and_Configuration.pdf
-│
-└── README.md
-```
-
----
-
-# 🎯 What I Learned
+# 🎯 What I Have Worked
 
 During this project I gained hands-on experience with:
 
@@ -210,16 +188,15 @@ During this project I gained hands-on experience with:
 
 A complete step-by-step deployment guide is included in this repository.
 
-It covers:
+| Guide | Description |
+|-------|-------------|
+| [Installation](docs/installation.md) | Install Docker, kubectl, K3s and Karmada |
+| [Join Clusters](docs/cluster-join.md) | Register Kubernetes clusters |
+| [Propagation Policy](docs/propagation-policy.md) | Distribute workloads |
+| [Karmada Configuration](docs/karmada-configuration.md) | Move workloads between clusters |
+| [HAProxy](docs/haproxy.md) | Configure Load Balancer |
 
-- Installing Karmada
-- Joining clusters
-- Resource migration
-- PropagationPolicy
-- HAProxy configuration
-- Azure DevOps integration
-
-The guide is based on the deployment document included with this project. :contentReference[oaicite:5]{index=5}
+GitHub automatically makes those links clickable.
 
 ---
 
@@ -227,7 +204,7 @@ The guide is based on the deployment document included with this project. :conte
 
 **Noushad Hasan**
 
-DevOps Engineer | Kubernetes | Docker | Terraform | Jenkins | GitOps | Karmada | HAProxy | Azure DevOps
+DevOps Engineer | Kubernetes | Docker | Terraform | Jenkins | GitOps | Ansible | Azure DevOps
 
 ---
 

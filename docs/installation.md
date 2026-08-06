@@ -36,7 +36,7 @@ curl -sfL https://get.k3s.io | sh -
 
 mkdir -p ~/.kube 
 cp /etc/rancher/k3s/k3s.yaml ~/.kube/config 
-sed -i 's/127.0.0.1/10.209.99.191/g' ~/.kube/config 
+sed -i 's/127.0.0.1/<karmada master ip>/g' ~/.kube/config 
 chmod 600 ~/.kube/config 
 kubectl get nodes 
 kubectl --kubeconfig=/etc/karmada/karmada-apiserver.config get clusters

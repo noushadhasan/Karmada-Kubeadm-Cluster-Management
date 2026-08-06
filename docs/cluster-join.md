@@ -1,5 +1,6 @@
 # Copy the Cluster Kubeconfigs 
-Copy each member cluster's kubeconfig onto the Karmada VM
+Copy each member cluster's kubeconfig onto the Karmada Control Plane
+
 * From cluster-1 master:
 ```bash
 cd /home/ubuntu 
@@ -30,9 +31,9 @@ karmadactl join cluster-2 \
  ```bash
  kubectl --kubeconfig=/etc/karmada/karmada-apiserver.config get clusters 
 ```
- * get the target cluster context
+ * Get the target cluster context
 ```bash
-kubectl config get-contexts --kubeconfig=/home/ibos/new-cluster.config 
+kubectl config get-contexts --kubeconfig=/home/ubuntu/new-cluster.config 
 ```
 
  * Unjoin the cluster 
