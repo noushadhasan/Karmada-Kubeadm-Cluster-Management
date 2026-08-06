@@ -26,28 +26,7 @@ The control plane distributes workloads across both Kubernetes clusters while HA
 
 # 🏗 Architecture
 
-```
-                    Azure DevOps / kubectl
-                             │
-                             ▼
-                  +-----------------------+
-                  |    Karmada Control    |
-                  |       Plane           |
-                  +-----------------------+
-                     │               │
-          Propagation│               │Propagation
-                     ▼               ▼
-          +----------------+   +----------------+
-          | Kubernetes     |   | Kubernetes     |
-          | Cluster 01     |   | Cluster 02     |
-          +----------------+   +----------------+
-                 │                    │
-                 └──────────┬─────────┘
-                            │
-                    HAProxy Load Balancer
-                            │
-                        Public Internet
-```
+![Architecture](Structure.png)
 
 ---
 
