@@ -26,7 +26,7 @@ The control plane distributes workloads across both Kubernetes clusters while HA
 
 # 🏗 Architecture
 
-![Architecture](Structure.png)
+![Architecture](karmada-haproxy-blog-architecture.gif)
 
 ---
 
