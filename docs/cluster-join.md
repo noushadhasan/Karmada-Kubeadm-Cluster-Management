@@ -39,7 +39,7 @@ kubectl config get-contexts --kubeconfig=/home/ubuntu/new-cluster.config
  * Unjoin the cluster 
  ```bash
  karmadactl unjoin cluster-2 \ 
-  --cluster-kubeconfig=/home/ubuntu./cluste-2.config \ 
+  --cluster-kubeconfig=/home/ubuntu/cluster-2.config \ 
   --cluster-context=kubernetes-admin@kubernetes \ 
   --kubeconfig=/etc/karmada/karmada-apiserver.config 
   ```
