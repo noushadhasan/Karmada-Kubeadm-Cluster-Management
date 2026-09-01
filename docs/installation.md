@@ -38,8 +38,20 @@ mkdir -p ~/.kube
 cp /etc/rancher/k3s/k3s.yaml ~/.kube/config 
 sed -i 's/127.0.0.1/<karmada master ip>/g' ~/.kube/config 
 chmod 600 ~/.kube/config 
-kubectl get nodes 
+kubectl get nodes
+```
+# Initialize Karmada Control Panel
+```bash
+sudo karmadactl init --kubeconfig=/home/ubuntu/.kube/config --crds=https://github.com/karmada-io/karmada/releases/download/v1.15.1/crds.tar.gz
+sudo ls -lah /etc/karmada/
 kubectl --kubeconfig=/etc/karmada/karmada-apiserver.config get clusters
+kubectl get pods -n karmada-system -o wide
+```
+# Karmada API Check:
+```bash
+sudo kubectl --kubeconfig=/etc/karmada/karmada-apiserver.config cluster-info
+
+sudo kubectl --kubeconfig=/etc/karmada/karmada-apiserver.config get namespaces
 ```
 
 # Find the Karmada kubeconfig

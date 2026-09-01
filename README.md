@@ -1,4 +1,4 @@
-# 🚀 Karmada Multi-Cluster Kubernetes Deployment with HAProxy
+# Karmada Multi-Cluster Kubernetes Deployment with HAProxy
 
 A production-style **multi-cluster Kubernetes deployment** using **Karmada** to centrally manage multiple Kubernetes clusters and automatically distribute Kubernetes resources such as **Deployments, Services, Ingresses, Secrets, and ConfigMaps**.
 
