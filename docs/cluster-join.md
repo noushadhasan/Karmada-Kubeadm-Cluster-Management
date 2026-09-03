@@ -43,4 +43,5 @@ kubectl config get-contexts --kubeconfig=/home/ubuntu/new-cluster.config
   --cluster-context=kubernetes-admin@kubernetes \ 
   --kubeconfig=/etc/karmada/karmada-apiserver.config 
   ```
-## NOTE:According to the Karmada v1.18 documentation, running unjoin CLUSTER_NAME without --cluster-kubeconfig removes the cluster from the Karmada control plane but does not clean up Karmada-created resources from the member cluster. When --cluster-kubeconfig is provided, Karmada attempts to clean up those resources from the member cluster as well.
+* NOTE:
+According to the Karmada v1.18 documentation, running unjoin CLUSTER_NAME without --cluster-kubeconfig removes the cluster from the Karmada control plane but does not clean up Karmada-created resources from the member cluster. When --cluster-kubeconfig is provided, Karmada attempts to clean up those resources from the member cluster as well.
