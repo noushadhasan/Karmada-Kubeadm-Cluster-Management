@@ -80,7 +80,7 @@ curl -vk --resolve <your-domain>:443:<cluster-1 ingress ip> https://<your-domain
 curl -vk --resolve <your-domain>:443:<cluster-2 ingress ip> https://<your-domain>
 ```
 
-In the dashboard, both pools should show **Healthy**, with `cluster-1-POOL` at Order 1 taking live traffic and `cluster-2-POOL` at Order 2 sitting idle until Karmada's [ClusterTaintPolicy](propagation-policy.md#create-a-clustertaintpolicy) fails workloads over to it — see [Production Failover Hardening](production-failover-hardening.md) for how that failover (and automatic fail-back) is driven from the Karmada side.
+In the dashboard, both pools should show **Healthy**, with `cluster-1-POOL` at Order 1 taking live traffic and `cluster-2-POOL` at Order 2 sitting idle until Karmada's [ClusterTaintPolicy](production-failover-hardening.md#production-clustertaintpolicy) fails workloads over to it — see [Production Failover Hardening](production-failover-hardening.md) for how that failover (and automatic fail-back) is driven from the Karmada side.
 
 ---
 

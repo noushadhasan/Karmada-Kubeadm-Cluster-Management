@@ -1,6 +1,6 @@
 # Production Failover Hardening
 
-The [PropagationPolicy](propagation-policy.md) and [ClusterTaintPolicy](propagation-policy.md#create-a-clustertaintpolicy) guide covers the generic active/passive setup. This document covers what was additionally required to run that setup in **production** to actually optimize cloud cost: keep the workload on a single primary cluster by default, fail it over to the backup cluster automatically when the primary goes down, and — just as importantly — fail it **back** to the primary automatically once it recovers, instead of leaving it stranded (and billed) on the backup.
+This document covers the full active/passive setup actually used in **production** to optimize cloud cost: keep the workload on a single primary cluster by default, fail it over to the backup cluster automatically when the primary goes down, and — just as importantly — fail it **back** to the primary once it recovers, instead of leaving it stranded (and billed) on the backup.
 
 Cluster names used in this environment:
 
@@ -53,6 +53,15 @@ spec:
       purgeMode: Gracefully
 ```
 
+`clusterAffinities` defines an ordered failover chain: Karmada schedules to `primary-k2` (`cluster-1`) first, and only falls back to `secondary-k1` (`cluster-2`) once the primary cluster stops satisfying the placement — e.g. it's tainted out by the [ClusterTaintPolicy](#production-clustertaintpolicy) below. `failover.cluster.purgeMode: Gracefully` ensures resources are gracefully removed from a failed-over-from cluster instead of being deleted abruptly.
+
+Apply it, then verify:
+
+```bash
+kubectl --kubeconfig=/etc/karmada/karmada-apiserver.config apply -f propagationPolicy.yaml
+kubectl --kubeconfig=/etc/karmada/karmada-apiserver.config get propagationpolicy
+```
+
 ## Production ClusterTaintPolicy
 
 ```yaml
@@ -84,11 +93,27 @@ spec:
       effect: NoExecute
 ```
 
-Apply both the same way as in the [Propagation Policy guide](propagation-policy.md):
+When a target cluster's `Ready` condition becomes anything other than `"True"`, Karmada adds the `failover.karmada.io/unhealthy` taint with effect `NoExecute`, which evicts scheduled resources from that cluster. Combined with the `clusterAffinities` failover chain above, this drives the active-passive behavior: if `cluster-1` (primary) goes unhealthy, resources fail over to `cluster-2` (backup). Once the cluster's `Ready` condition returns to `"True"`, the taint is automatically removed.
+
+Apply it, then verify:
 
 ```bash
-kubectl --kubeconfig=/etc/karmada/karmada-apiserver.config apply -f propagationPolicy.yaml
 kubectl --kubeconfig=/etc/karmada/karmada-apiserver.config apply -f clusterTaintPolicy.yaml
+kubectl --kubeconfig=/etc/karmada/karmada-apiserver.config get clustertaintpolicy
+```
+
+### Cleanup / removing the policies
+
+```bash
+# PropagationPolicy
+kubectl --kubeconfig=/etc/karmada/karmada-apiserver.config -n production delete propagationpolicy default-resources-active-passive
+
+# Also delete the corresponding resourcebinding it left behind (e.g. Ingress resources)
+kubectl --kubeconfig=/etc/karmada/karmada-apiserver.config -n production get resourcebinding
+kubectl --kubeconfig=/etc/karmada/karmada-apiserver.config -n production delete resourcebinding example-ingress
+
+# ClusterTaintPolicy
+kubectl --kubeconfig=/etc/karmada/karmada-apiserver.config delete clustertaintpolicy automatic-cluster-failover
 ```
 
 ---
