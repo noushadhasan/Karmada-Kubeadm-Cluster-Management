@@ -153,7 +153,7 @@ Prerequisite: `failback.sh` already exists on the host, e.g. at `/home/ubuntu/ka
 **Step 1 — Point at the Karmada control plane**
 
 ```bash
-export KUBECONFIG=$HOME/.kube/karmada.config
+export KUBECONFIG=/etc/karmada/karmada-apiserver.config
 ```
 
 **Step 2 — ServiceAccount (Karmada)**
