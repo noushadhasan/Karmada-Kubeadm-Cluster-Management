@@ -34,7 +34,7 @@ The control plane distributes workloads across both Kubernetes clusters, automat
 
 ![Karmada Active/Passive Architecture](karmada-architecture.gif)
 
-This is the actual cycle running in production: the k3s-hosted Karmada control plane (`karmada-apiserver`, `karmada-scheduler`, `karmada-controller-manager` with `TaintManager` active) keeps workloads on `projukti-cluster` (**PRIMARY**, affinity `primary-k2`) while it's `Ready`. If it goes unhealthy, `ClusterTaintPolicy` taints it and workloads move to `aks-combined-cluster` (**SECONDARY**, affinity `secondary-k1`). Once the primary is `Ready`, untainted, and stable for the settle window, the `failback` CronJob (`*/5 * * * *`) forces the workloads back — see [Production Failover Hardening](docs/production-failover-hardening.md) for exactly how both directions work.
+This is the actual cycle running in production: the k3s-hosted Karmada control plane (`karmada-apiserver`, `karmada-scheduler`, `karmada-controller-manager` with `TaintManager` active) keeps workloads on `cluster-1` (**PRIMARY**, affinity `primary-k2`) while it's `Ready`. If it goes unhealthy, `ClusterTaintPolicy` taints it and workloads move to `cluster-2` (**SECONDARY**, affinity `secondary-k1`). Once the primary is `Ready`, untainted, and stable for the settle window, the `failback` CronJob (`*/5 * * * *`) forces the workloads back — see [Production Failover Hardening](docs/production-failover-hardening.md) for exactly how both directions work.
 
 ### Full Deployment Pipeline
 
