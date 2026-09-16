@@ -42,7 +42,11 @@ This is the actual cycle running in production: the k3s-hosted Karmada control p
 
 The wider pipeline this cycle feeds into: CI/CD → Karmada Control Plane → PropagationPolicy → member clusters → edge Load Balancer (Cloudflare or HAProxy) → DNS → users.
 
-> `karmada-haproxy-blog-architecture.gif` (the original CI/CD → Karmada → HAProxy 70/30-split diagram) is kept in the repo root for reference — it predates the `ClusterAffinities`/`ClusterTaintPolicy` active-passive failover, the fail-back CronJob, and the Cloudflare Load Balancer option documented below.
+### HAProxy Ingress Design (Original)
+
+![Karmada HAProxy Architecture](karmada-haproxy-blog-architecture.gif)
+
+This is the original design: Karmada auto-propagates resources to both member clusters to keep them in an active/active, highly-available pair, with ingress traffic for the application arriving through a self-hosted **HAProxy** load balancer sitting in front of both clusters' Ingress controllers. It predates the `ClusterAffinities`/`ClusterTaintPolicy` active-passive failover and the fail-back CronJob shown above — kept here as the HAProxy-based alternative to the Cloudflare design.
 
 ---
 
