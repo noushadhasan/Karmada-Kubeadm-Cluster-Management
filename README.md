@@ -2,7 +2,7 @@
 
 A production-style **multi-cluster Kubernetes deployment** using **Karmada** to centrally manage multiple Kubernetes clusters and automatically distribute Kubernetes resources such as **Deployments, Services, Ingresses, Secrets, and ConfigMaps**.
 
-This project demonstrates how to build a centralized control plane that manages multiple Kubernetes clusters, fails workloads over automatically between clusters using Karmada's `ClusterAffinities` and `ClusterTaintPolicy`, and exposes applications through either a self-hosted **HAProxy Load Balancer** or a **Cloudflare Load Balancer**.
+This project demonstrates how to build a centralized control plane that manages multiple Kubernetes clusters, fails workloads over automatically between clusters using Karmada's `ClusterAffinities` and `ClusterTaintPolicy`, and exposes applications through either a self-hosted **HAProxy Load Balancer** or a **Cloudflare Load Balancer** — both are documented, but **Cloudflare is the simpler path for this project** since it needs no load-balancer infrastructure of your own.
 
 ---
 
@@ -20,8 +20,8 @@ In this project I configured:
 - ✅ Automatic cluster health tainting using ClusterTaintPolicy
 - ✅ Production failover hardening (controller-manager feature gates, automatic fail-back)
 - ✅ Automatic deployment distribution
-- ✅ HAProxy Load Balancer
-- ✅ Cloudflare Load Balancer (Active/Passive pool failover)
+- ✅ Cloudflare Load Balancer (Active/Passive pool failover) — recommended, easiest to set up
+- ✅ HAProxy Load Balancer — self-hosted alternative
 - ✅ Centralized application management
 
 The control plane distributes workloads across both Kubernetes clusters, automatically failing them over to the standby cluster if the primary becomes unhealthy, while HAProxy or Cloudflare exposes them through a single public endpoint.
@@ -30,9 +30,19 @@ The control plane distributes workloads across both Kubernetes clusters, automat
 
 # 🏗 Architecture
 
+### Active/Passive Failover & Fail-Back Cycle
+
+![Karmada Active/Passive Architecture](karmada-architecture.gif)
+
+This is the actual cycle running in production: the k3s-hosted Karmada control plane (`karmada-apiserver`, `karmada-scheduler`, `karmada-controller-manager` with `TaintManager` active) keeps workloads on `projukti-cluster` (**PRIMARY**, affinity `primary-k2`) while it's `Ready`. If it goes unhealthy, `ClusterTaintPolicy` taints it and workloads move to `aks-combined-cluster` (**SECONDARY**, affinity `secondary-k1`). Once the primary is `Ready`, untainted, and stable for the settle window, the `failback` CronJob (`*/5 * * * *`) forces the workloads back — see [Production Failover Hardening](docs/production-failover-hardening.md) for exactly how both directions work.
+
+### Full Deployment Pipeline
+
 ![Architecture](docs/architecture-active-passive.svg)
 
-> This replaces the earlier `karmada-haproxy-blog-architecture.gif`, which only showed the original 70/30 weighted HAProxy split — it predates the `ClusterAffinities` / `ClusterTaintPolicy` active/passive failover and Cloudflare Load Balancer option documented below. The old file is still in the repo root if you want to compare or reuse it.
+The wider pipeline this cycle feeds into: CI/CD → Karmada Control Plane → PropagationPolicy → member clusters → edge Load Balancer (Cloudflare or HAProxy) → DNS → users.
+
+> `karmada-haproxy-blog-architecture.gif` (the original CI/CD → Karmada → HAProxy 70/30-split diagram) is kept in the repo root for reference — it predates the `ClusterAffinities`/`ClusterTaintPolicy` active-passive failover, the fail-back CronJob, and the Cloudflare Load Balancer option documented below.
 
 ---
 
@@ -140,14 +150,27 @@ Together these drive automatic, unattended failover between clusters — no manu
 
 ### 5. Load Balancer / Traffic Exposure
 
-Two options are documented for exposing the active cluster to the internet:
+Two options are documented for exposing the active cluster to the internet, and this project has a working design for both — pick whichever fits your infrastructure:
 
-- **HAProxy** — a standalone Layer-4 (TCP/TLS passthrough) load balancer you run yourself, sitting in front of both cluster ingress IPs.
-- **Cloudflare Load Balancer** — a managed Layer-7 load balancer using Primary/Backup pools, pool priority, and an HTTPS health monitor to steer traffic to whichever cluster Karmada currently has the application running on.
+- **Cloudflare Load Balancer (recommended)** — a managed Layer-7 load balancer. No load-balancer infrastructure to run or patch yourself, DNS/health-checks/failover all live in one dashboard, and it's the option actually used in production for this project because it's by far the easier one to stand up and operate.
+- **HAProxy** — a self-hosted Layer-4 (TCP/TLS passthrough) load balancer, useful if you'd rather keep the entire path — including the load balancer — on your own infrastructure instead of depending on Cloudflare.
+
+#### Cloudflare Load Balancer (Recommended)
+
+Cloudflare's Load Balancer fronts the two clusters directly:
+
+- **Primary Pool** (`Cluster-1-POOL`) and **Backup Pool** (`Cluster-2-POOL`), each pointing at one cluster's Ingress public IP on port 443.
+- **Traffic Steering: Off**, so Cloudflare uses pool priority order (Primary → Backup) rather than latency/geo-based steering.
+- An **HTTPS health monitor** (not just TCP) checking `/health` or `/healthz` with an expected `200` response, so failover reacts to application health, not just port reachability.
+- **Zero Downtime Failover** enabled to retry failed requests against the next healthy pool.
+
+Full failover flow: Karmada detects the primary cluster is down → `ClusterTaintPolicy` taints it → workloads are rescheduled to `cluster-2` → the app becomes healthy there → the Cloudflare HTTPS monitor marks the backup pool healthy → traffic moves to `cluster-2`.
+
+See [Cloudflare Load Balancer Configuration](docs/cloudflare-karmada-lb.md) and the [dashboard walkthrough](docs/cloudflare-lb-pool-setup.md) for the full pool, monitor, and DNS setup.
 
 #### HAProxy Load Balancer
 
-A standalone HAProxy server sits in front of both Kubernetes clusters.
+A standalone HAProxy server sits in front of both Kubernetes clusters, useful when you want to avoid depending on a third-party load balancer entirely.
 
 Responsibilities:
 
@@ -165,18 +188,7 @@ Supported modes:
 - Weighted Distribution
 - Backup Server (Failover)
 
-#### Cloudflare Load Balancer
-
-As an alternative to self-hosted HAProxy, Cloudflare's Load Balancer can front the two clusters directly:
-
-- **Primary Pool** (`Cluster-1-POOL`) and **Backup Pool** (`Cluster-2-POOL`), each pointing at one cluster's Ingress public IP on port 443.
-- **Traffic Steering: Off**, so Cloudflare uses pool priority order (Primary → Backup) rather than latency/geo-based steering.
-- An **HTTPS health monitor** (not just TCP) checking `/health` or `/healthz` with an expected `200` response, so failover reacts to application health, not just port reachability.
-- **Zero Downtime Failover** enabled to retry failed requests against the next healthy pool.
-
-Full failover flow: Karmada detects the primary cluster is down → `ClusterTaintPolicy` taints it → workloads are rescheduled to `cluster-2` → the app becomes healthy there → the Cloudflare HTTPS monitor marks the backup pool healthy → traffic moves to `cluster-2`.
-
-See [Cloudflare Load Balancer Configuration](docs/cloudflare-karmada-lb.md) for the full pool, monitor, and DNS setup.
+See [HAProxy Configuration](docs/haproxy.md) for the full setup.
 
 ---
 
