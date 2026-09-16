@@ -18,6 +18,7 @@ In this project I configured:
 - ✅ Resource propagation using PropagationPolicy
 - ✅ Active/Passive failover using ClusterAffinities
 - ✅ Automatic cluster health tainting using ClusterTaintPolicy
+- ✅ Production failover hardening (controller-manager feature gates, automatic fail-back)
 - ✅ Automatic deployment distribution
 - ✅ HAProxy Load Balancer
 - ✅ Cloudflare Load Balancer (Active/Passive pool failover)
@@ -217,6 +218,7 @@ A complete step-by-step deployment guide is included in this repository.
 | [Installation](docs/installation.md) | Install Docker, kubectl, K3s and Karmada |
 | [Join Clusters](docs/cluster-join.md) | Register Kubernetes clusters |
 | [Propagation Policy](docs/propagation-policy.md) | Distribute workloads, ClusterAffinities failover, ClusterTaintPolicy |
+| [Production Failover Hardening](docs/production-failover-hardening.md) | Enable controller-manager failover feature gates, fix rollout deadlock, automatic fail-back, manual drills |
 | [Karmada Configuration](docs/karmada-configuration.md) | Move workloads between clusters |
 | [HAProxy](docs/haproxy.md) | Configure self-hosted Load Balancer |
 | [Cloudflare Load Balancer](docs/cloudflare-karmada-lb.md) | Configure managed Active/Passive Load Balancer |

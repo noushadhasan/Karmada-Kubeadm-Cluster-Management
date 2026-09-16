@@ -108,3 +108,7 @@ kubectl --kubeconfig=/etc/karmada/karmada-apiserver.config get clustertaintpolic
 ```bash
 kubectl --kubeconfig=/etc/karmada/karmada-apiserver.config delete clustertaintpolicy automatic-cluster-failover
 ```
+
+---
+
+> **Production note:** applying these two policies alone is not enough to get automatic failover working — Karmada requires the `Failover` feature gate and no-execute taint eviction to be explicitly enabled on `karmada-controller-manager` before the `NoExecute` taint above actually evicts/reschedules anything. See [Production Failover Hardening](production-failover-hardening.md) for enabling those flags, fixing the resulting rollout deadlock, the automatic fail-back behavior, and manual drill commands.
