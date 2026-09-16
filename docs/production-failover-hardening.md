@@ -130,13 +130,134 @@ Confirm the new `karmada-controller-manager` pod is `Running` / `1/1 Ready` befo
 
 ## Automatic Fail-Back to the Primary
 
-This is what actually saves cloud cost — resources don't stay parked on the backup cluster after a recovery:
+This is the part that actually saves cloud cost — resources shouldn't stay parked on the backup cluster after a recovery. It's also the part Karmada does **not** do for you by default:
 
 1. `cluster-1` goes `NotReady` → `ClusterTaintPolicy` taints it `failover.karmada.io/unhealthy:NoExecute` → the controller-manager (with `Failover`/`enable-no-execute-taint-eviction` on) evicts the workloads and reschedules them onto `cluster-2` per the `clusterAffinities` backup priority.
 2. `cluster-1` becomes `Ready` again → the taint is automatically removed by `ClusterTaintPolicy`'s `removeOnConditions`.
-3. Because `clusterAffinities` always prefers the Priority 1 entry (`cluster-1`), Karmada reschedules the workloads back onto it automatically — no manual re-propagation needed, and `cluster-2` goes back to being idle standby capacity.
+3. **Nothing reschedules the workload back on its own.** Karmada's scheduler walks `clusterAffinities` **forward only**, starting from `status.schedulerObservingAffinityName` on the (Cluster)ResourceBinding. Once that field is set to the backup affinity (e.g. `secondary-k1`), it stays there — Karmada never clears it itself, so every future scheduling pass starts from the backup, not from the top of the list. `WorkloadRebalancer` doesn't fix this either: it only sets `spec.rescheduleTriggeredAt` to force a re-schedule, it doesn't clear the observed affinity, so a rebalance still resolves back to the backup. Left alone, the workload stays on `cluster-2` indefinitely even though `cluster-1` is healthy again.
 
-This bypasses Karmada's non-failover default (schedule once, stay put) and turns the pair into a true self-healing active/passive setup.
+To actually force fail-back, this environment runs [`failback.sh`](../failback.sh) on a **5-minute CronJob**. It:
+
+- Gates on the primary being `Ready`, untainted, and stable for a settle window (`SETTLE_MINUTES`, default 15m) — so it doesn't fail back into a cluster that's still flapping.
+- Finds every `ResourceBinding`/`ClusterResourceBinding` whose `status.schedulerObservingAffinityName` is set to anything other than the primary affinity (`primary-k2`).
+- For each one, patches `status.schedulerObservingAffinityName` to `""` (clearing the pin) and then patches `spec.rescheduleTriggeredAt` (forcing Karmada to re-run scheduling) — with the observed affinity cleared, the scheduler walks `clusterAffinities` from index 0 again and lands back on `cluster-1`.
+- Processes in batches (`BATCH_SIZE`, `BATCH_PAUSE`) with a `MAX_PER_RUN` cap, and verifies afterward how many bindings are still off-primary, failing the Job (so it alerts) if nothing moved at all.
+- Has a kill switch (`ENABLED=false`) and a `DRY_RUN=1` mode that only logs what it would do.
+
+### Two API servers, two RBAC surfaces
+
+The CronJob itself runs on **k3s** (the host Karmada's control plane runs on), but the script talks to the **Karmada API server**, not the k3s API — so it needs its own ServiceAccount/RBAC/token on the Karmada side, wrapped into a kubeconfig Secret that gets mounted into the Job on the k3s side. Sequential install, no test jobs — each step below says which API server it targets.
+
+Prerequisite: `failback.sh` already exists on the host, e.g. at `/home/ubuntu/karmada-failback/failback.sh`.
+
+**Step 1 — Point at the Karmada control plane**
+
+```bash
+export KUBECONFIG=$HOME/.kube/karmada.config
+```
+
+**Step 2 — ServiceAccount (Karmada)**
+
+```bash
+kubectl create sa karmada-failback -n karmada-system
+```
+
+**Step 3 — ClusterRole (Karmada)**
+
+```bash
+echo '{"apiVersion":"rbac.authorization.k8s.io/v1","kind":"ClusterRole","metadata":{"name":"karmada-failback"},"rules":[{"apiGroups":["cluster.karmada.io"],"resources":["clusters"],"verbs":["get","list"]},{"apiGroups":["work.karmada.io"],"resources":["resourcebindings","clusterresourcebindings"],"verbs":["get","list","patch"]},{"apiGroups":["work.karmada.io"],"resources":["resourcebindings/status","clusterresourcebindings/status"],"verbs":["get","patch"]}]}' | kubectl apply -f -
+```
+
+**Step 4 — ClusterRoleBinding (Karmada)**
+
+```bash
+echo '{"apiVersion":"rbac.authorization.k8s.io/v1","kind":"ClusterRoleBinding","metadata":{"name":"karmada-failback"},"roleRef":{"apiGroup":"rbac.authorization.k8s.io","kind":"ClusterRole","name":"karmada-failback"},"subjects":[{"kind":"ServiceAccount","name":"karmada-failback","namespace":"karmada-system"}]}' | kubectl apply -f -
+```
+
+**Step 5 — Non-expiring SA token (Karmada)**
+
+```bash
+echo '{"apiVersion":"v1","kind":"Secret","metadata":{"name":"karmada-failback-token","namespace":"karmada-system","annotations":{"kubernetes.io/service-account.name":"karmada-failback"}},"type":"kubernetes.io/service-account-token"}' | kubectl apply -f -
+```
+
+**Step 6 — Confirm the token was populated (Karmada)**
+
+```bash
+kubectl get secret karmada-failback-token -n karmada-system -o go-template='{{range $k,$v := .data}}{{$k}} {{end}}'
+```
+
+Must print `ca.crt namespace token`. If empty, wait a few seconds and re-run — the token controller fills it asynchronously.
+
+**Step 7 — Stop using the Karmada kubeconfig**
+
+```bash
+unset KUBECONFIG
+```
+
+Everything from here targets k3s.
+
+**Step 8 — Generate the kubeconfig Secret into k3s**
+
+Reads the token from Karmada, writes the Secret into k3s:
+
+```bash
+KC=$HOME/.kube/karmada.config
+CA=$(kubectl --kubeconfig=$KC get secret karmada-failback-token -n karmada-system -o jsonpath='{.data.ca\.crt}')
+TOK=$(kubectl --kubeconfig=$KC get secret karmada-failback-token -n karmada-system -o jsonpath='{.data.token}' | base64 -d)
+F=$(mktemp); chmod 600 $F
+printf '%s' '{"apiVersion":"v1","kind":"Config","current-context":"karmada","clusters":[{"name":"karmada","cluster":{"server":"https://karmada-apiserver.karmada-system.svc.cluster.local:5443","certificate-authority-data":"'"$CA"'"}}],"users":[{"name":"failback","user":{"token":"'"$TOK"'"}}],"contexts":[{"name":"karmada","context":{"cluster":"karmada","user":"failback"}}]}' > $F
+kubectl create secret generic karmada-failback-kubeconfig -n karmada-system --from-file=karmada.config=$F --dry-run=client -o json | kubectl apply -f -
+rm -f $F
+```
+
+**Step 9 — Script ConfigMap (k3s)**
+
+```bash
+kubectl create configmap karmada-failback-script -n karmada-system --from-file=failback.sh=/home/ubuntu/karmada-failback/failback.sh --dry-run=client -o json | kubectl apply -f -
+```
+
+**Step 10 — Config ConfigMap (k3s)**
+
+```bash
+kubectl create configmap karmada-failback-config -n karmada-system \
+  --from-literal=ENABLED=true \
+  --from-literal=DRY_RUN=0 \
+  --from-literal=PRIMARY_CLUSTER=cluster-1 \
+  --from-literal=PRIMARY_AFFINITY=primary-k2 \
+  --from-literal=SETTLE_MINUTES=15 \
+  --from-literal=BATCH_SIZE=20 \
+  --from-literal=BATCH_PAUSE=15 \
+  --from-literal=MAX_PER_RUN=50 \
+  --dry-run=client -o json | kubectl apply -f -
+```
+
+**Step 11 — CronJob (k3s)**
+
+```bash
+echo '{"apiVersion":"batch/v1","kind":"CronJob","metadata":{"name":"karmada-failback","namespace":"karmada-system"},"spec":{"schedule":"*/5 * * * *","suspend":false,"concurrencyPolicy":"Forbid","successfulJobsHistoryLimit":3,"failedJobsHistoryLimit":3,"startingDeadlineSeconds":120,"jobTemplate":{"spec":{"backoffLimit":0,"ttlSecondsAfterFinished":3600,"template":{"spec":{"restartPolicy":"Never","containers":[{"name":"failback","image":"docker.io/rancher/klipper-helm:v0.13.3-build20260727","imagePullPolicy":"IfNotPresent","command":["/bin/bash","/opt/failback/failback.sh"],"envFrom":[{"configMapRef":{"name":"karmada-failback-config"}}],"resources":{"requests":{"cpu":"50m","memory":"64Mi"},"limits":{"memory":"256Mi"}},"securityContext":{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]}},"volumeMounts":[{"name":"script","mountPath":"/opt/failback","readOnly":true},{"name":"kubeconfig","mountPath":"/etc/karmada/config","readOnly":true},{"name":"kubectl","mountPath":"/usr/local/bin/kubectl","readOnly":true}]}],"volumes":[{"name":"script","configMap":{"name":"karmada-failback-script","defaultMode":493}},{"name":"kubeconfig","secret":{"secretName":"karmada-failback-kubeconfig","defaultMode":292}},{"name":"kubectl","hostPath":{"path":"/usr/local/bin/kubectl","type":"File"}}]}}}}}}' | kubectl apply -f -
+```
+
+**Step 12 — Verify it runs (k3s)**
+
+Wait for the next 5-minute boundary, then:
+
+```bash
+kubectl logs -n karmada-system -l job-name --tail=20 --prefix
+```
+
+Expect `primary cluster-1: Ready, untainted, stable for Nm -> proceeding`, followed by `nothing to do` once everything is already back home.
+
+### Staged vs. live install
+
+Steps 10–11 above install it **live**: `ENABLED=true`/`DRY_RUN=0` in the ConfigMap and `"suspend":false` in the CronJob mean it acts from the very first tick. To stage it instead — observe logs for a while before it patches anything — use `ENABLED=false`/`DRY_RUN=1` in step 10 and `"suspend":true` in step 11, then flip both on once you trust it.
+
+### Kill switch
+
+For planned maintenance on the primary (so the CronJob doesn't fight you while you intentionally drain `cluster-1`):
+
+```bash
+kubectl patch cm karmada-failback-config -n karmada-system --type=merge -p '{"data":{"ENABLED":"false"}}'
+```
 
 ---
 
