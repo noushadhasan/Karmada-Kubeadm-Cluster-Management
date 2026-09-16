@@ -201,7 +201,7 @@ Everything from here targets k3s.
 Reads the token from Karmada, writes the Secret into k3s:
 
 ```bash
-KC=$HOME/.kube/karmada.config
+KC=/etc/karmada/karmada-apiserver.config
 CA=$(kubectl --kubeconfig=$KC get secret karmada-failback-token -n karmada-system -o jsonpath='{.data.ca\.crt}')
 TOK=$(kubectl --kubeconfig=$KC get secret karmada-failback-token -n karmada-system -o jsonpath='{.data.token}' | base64 -d)
 F=$(mktemp); chmod 600 $F
