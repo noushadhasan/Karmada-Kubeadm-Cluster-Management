@@ -93,7 +93,7 @@ Using Cloudflare proxy mode allows Cloudflare to perform Layer-7 HTTP/HTTPS load
 
 # Pool Configuration
 
-Two pools are used.
+Two pools are used. For the actual dashboard click-through (Hostname > Pools > Monitors > Traffic Steering > Custom Rules > Review), see [Cloudflare LB Pool Setup](cloudflare-lb-pool-setup.md).
 
 ## Pool 1 - Primary
 

@@ -30,7 +30,9 @@ The control plane distributes workloads across both Kubernetes clusters, automat
 
 # 🏗 Architecture
 
-![Architecture](karmada-haproxy-blog-architecture.gif)
+![Architecture](docs/architecture-active-passive.svg)
+
+> This replaces the earlier `karmada-haproxy-blog-architecture.gif`, which only showed the original 70/30 weighted HAProxy split — it predates the `ClusterAffinities` / `ClusterTaintPolicy` active/passive failover and Cloudflare Load Balancer option documented below. The old file is still in the repo root if you want to compare or reuse it.
 
 ---
 
@@ -222,6 +224,7 @@ A complete step-by-step deployment guide is included in this repository.
 | [Karmada Configuration](docs/karmada-configuration.md) | Move workloads between clusters |
 | [HAProxy](docs/haproxy.md) | Configure self-hosted Load Balancer |
 | [Cloudflare Load Balancer](docs/cloudflare-karmada-lb.md) | Configure managed Active/Passive Load Balancer |
+| [Cloudflare LB Pool Setup](docs/cloudflare-lb-pool-setup.md) | Step-by-step dashboard walkthrough for the Pools wizard |
 
 
 ---

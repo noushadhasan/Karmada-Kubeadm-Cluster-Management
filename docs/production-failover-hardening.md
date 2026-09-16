@@ -4,8 +4,8 @@ The [PropagationPolicy](propagation-policy.md) and [ClusterTaintPolicy](propagat
 
 Cluster names used in this environment:
 
-- `projukti-cluster` — **primary**, runs the workload day-to-day.
-- `aks-combined-cluster` — **backup**, only used while the primary is unhealthy.
+- `cluster-1` — **primary**, runs the workload day-to-day.
+- `cluster-2` — **backup**, only used while the primary is unhealthy.
 
 ---
 
@@ -41,12 +41,12 @@ spec:
       # Priority 1 - PRIMARY
       - affinityName: primary-k2
         clusterNames:
-          - projukti-cluster
+          - cluster-1
 
       # Priority 2 - BACKUP
       - affinityName: secondary-k1
         clusterNames:
-          - aks-combined-cluster
+          - cluster-2
 
   failover:
     cluster:
@@ -64,8 +64,8 @@ metadata:
 spec:
   targetClusters:
     clusterNames:
-      - projukti-cluster
-      - aks-combined-cluster
+      - cluster-1
+      - cluster-2
 
   addOnConditions:
     - conditionType: Ready
@@ -132,9 +132,9 @@ Confirm the new `karmada-controller-manager` pod is `Running` / `1/1 Ready` befo
 
 This is what actually saves cloud cost — resources don't stay parked on the backup cluster after a recovery:
 
-1. `projukti-cluster` goes `NotReady` → `ClusterTaintPolicy` taints it `failover.karmada.io/unhealthy:NoExecute` → the controller-manager (with `Failover`/`enable-no-execute-taint-eviction` on) evicts the workloads and reschedules them onto `aks-combined-cluster` per the `clusterAffinities` backup priority.
-2. `projukti-cluster` becomes `Ready` again → the taint is automatically removed by `ClusterTaintPolicy`'s `removeOnConditions`.
-3. Because `clusterAffinities` always prefers the Priority 1 entry (`projukti-cluster`), Karmada reschedules the workloads back onto it automatically — no manual re-propagation needed, and `aks-combined-cluster` goes back to being idle standby capacity.
+1. `cluster-1` goes `NotReady` → `ClusterTaintPolicy` taints it `failover.karmada.io/unhealthy:NoExecute` → the controller-manager (with `Failover`/`enable-no-execute-taint-eviction` on) evicts the workloads and reschedules them onto `cluster-2` per the `clusterAffinities` backup priority.
+2. `cluster-1` becomes `Ready` again → the taint is automatically removed by `ClusterTaintPolicy`'s `removeOnConditions`.
+3. Because `clusterAffinities` always prefers the Priority 1 entry (`cluster-1`), Karmada reschedules the workloads back onto it automatically — no manual re-propagation needed, and `cluster-2` goes back to being idle standby capacity.
 
 This bypasses Karmada's non-failover default (schedule once, stay put) and turns the pair into a true self-healing active/passive setup.
 
@@ -145,13 +145,13 @@ This bypasses Karmada's non-failover default (schedule once, stay put) and turns
 To rehearse the failover/fail-back cycle without waiting for a real outage, manually taint the primary cluster:
 
 ```bash
-karmadactl --kubeconfig=/etc/karmada/karmada-apiserver.config taint cluster projukti-cluster failover-test:NoExecute
+karmadactl --kubeconfig=/etc/karmada/karmada-apiserver.config taint cluster cluster-1 failover-test:NoExecute
 ```
 
-Confirm workloads move to `aks-combined-cluster`, then remove the taint to confirm they move back to `projukti-cluster`:
+Confirm workloads move to `cluster-2`, then remove the taint to confirm they move back to `cluster-1`:
 
 ```bash
-karmadactl --kubeconfig=/etc/karmada/karmada-apiserver.config taint cluster projukti-cluster failover-test:NoExecute-
+karmadactl --kubeconfig=/etc/karmada/karmada-apiserver.config taint cluster cluster-1 failover-test:NoExecute-
 ```
 
 The trailing `-` after `NoExecute` is `karmadactl`'s syntax for removing a taint rather than adding one.

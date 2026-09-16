@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 1080" font-family="Arial, Helvetica, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#334155"/>
+    </marker>
+    <marker id="arrowDash" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#7c3aed"/>
+    </marker>
+    <marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1500" height="1080" fill="#ffffff"/>
+
+  <text x="750" y="40" text-anchor="middle" font-size="26" font-weight="bold" fill="#0f172a">Karmada Active/Passive Multi-Cluster Architecture</text>
+  <text x="750" y="64" text-anchor="middle" font-size="14" fill="#64748b">Automatic failover + automatic fail-back, exposed via Cloudflare Load Balancer (or self-hosted HAProxy)</text>
+
+  <!-- Internet Users -->
+  <rect x="600" y="90" width="300" height="60" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="750" y="115" text-anchor="middle" font-size="16" font-weight="bold" fill="#1d4ed8">Internet Users</text>
+  <text x="750" y="135" text-anchor="middle" font-size="12" fill="#334155">Single public domain</text>
+
+  <!-- Edge LB -->
+  <rect x="500" y="185" width="500" height="110" rx="10" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+  <text x="750" y="210" text-anchor="middle" font-size="16" font-weight="bold" fill="#c2410c">Edge Load Balancer</text>
+  <text x="750" y="232" text-anchor="middle" font-size="12" fill="#334155">Cloudflare LB (primary) — HTTPS health monitor, Pool Priority, Traffic Steering: Off</text>
+  <text x="750" y="250" text-anchor="middle" font-size="12" fill="#334155">or self-hosted HAProxy (alternate) — TCP/TLS passthrough, active/passive backup server</text>
+  <text x="750" y="272" text-anchor="middle" font-size="12" font-style="italic" fill="#9a3412">Always routes 100% traffic to Priority-1 pool while it is healthy</text>
+
+  <line x1="750" y1="150" x2="750" y2="185" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Pools -->
+  <rect x="180" y="330" width="300" height="90" rx="10" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+  <text x="330" y="355" text-anchor="middle" font-size="15" font-weight="bold" fill="#047857">Pool Priority 1 — cluster-1-POOL</text>
+  <text x="330" y="375" text-anchor="middle" font-size="12" fill="#334155">Endpoint: cluster-1 Ingress public IP</text>
+  <text x="330" y="393" text-anchor="middle" font-size="12" fill="#334155">Role: PRIMARY / ACTIVE</text>
+
+  <rect x="1020" y="330" width="300" height="90" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="1170" y="355" text-anchor="middle" font-size="15" font-weight="bold" fill="#1d4ed8">Pool Priority 2 — cluster-2-POOL</text>
+  <text x="1170" y="375" text-anchor="middle" font-size="12" fill="#334155">Endpoint: cluster-2 Ingress public IP</text>
+  <text x="1170" y="393" text-anchor="middle" font-size="12" fill="#334155">Role: BACKUP / FALLBACK</text>
+
+  <line x1="650" y1="295" x2="330" y2="330" stroke="#059669" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="850" y1="295" x2="1170" y2="330" stroke="#2563eb" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arrow)"/>
+  <text x="480" y="315" font-size="11" fill="#059669" font-weight="bold">100% while healthy</text>
+  <text x="920" y="315" font-size="11" fill="#2563eb" font-weight="bold">only if pool 1 unhealthy</text>
+
+  <!-- Clusters -->
+  <rect x="150" y="460" width="360" height="140" rx="10" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+  <text x="330" y="486" text-anchor="middle" font-size="16" font-weight="bold" fill="#047857">cluster-1 (PRIMARY)</text>
+  <text x="330" y="508" text-anchor="middle" font-size="12" fill="#334155">NGINX Ingress Controller</text>
+  <text x="330" y="528" text-anchor="middle" font-size="12" fill="#334155">Deployment / Service / Secret / Ingress</text>
+  <text x="330" y="548" text-anchor="middle" font-size="12" fill="#334155">running (Ready = True)</text>
+  <text x="330" y="580" text-anchor="middle" font-size="12" font-weight="bold" fill="#b91c1c">If NotReady → tainted NoExecute → evicted</text>
+
+  <rect x="990" y="460" width="360" height="140" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="1170" y="486" text-anchor="middle" font-size="16" font-weight="bold" fill="#1d4ed8">cluster-2 (BACKUP)</text>
+  <text x="1170" y="508" text-anchor="middle" font-size="12" fill="#334155">NGINX Ingress Controller</text>
+  <text x="1170" y="528" text-anchor="middle" font-size="12" fill="#334155">Idle standby — no app in normal state</text>
+  <text x="1170" y="548" text-anchor="middle" font-size="12" fill="#334155">Only receives workloads on failover</text>
+  <text x="1170" y="580" text-anchor="middle" font-size="12" font-weight="bold" fill="#047857">Scaled down again once cluster-1 recovers</text>
+
+  <line x1="330" y1="420" x2="330" y2="460" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="1170" y1="420" x2="1170" y2="460" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Karmada control plane -->
+  <rect x="480" y="740" width="540" height="200" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="750" y="768" text-anchor="middle" font-size="17" font-weight="bold" fill="#6d28d9">Karmada Control Plane</text>
+
+  <rect x="500" y="782" width="240" height="140" rx="8" fill="#ffffff" stroke="#a855f7" stroke-width="1.5"/>
+  <text x="620" y="802" text-anchor="middle" font-size="13" font-weight="bold" fill="#6d28d9">PropagationPolicy</text>
+  <text x="620" y="822" text-anchor="middle" font-size="11" fill="#334155">clusterAffinities:</text>
+  <text x="620" y="840" text-anchor="middle" font-size="11" fill="#334155">1. primary-k2 → cluster-1</text>
+  <text x="620" y="858" text-anchor="middle" font-size="11" fill="#334155">2. secondary-k1 → cluster-2</text>
+  <text x="620" y="878" text-anchor="middle" font-size="11" fill="#334155">failover.purgeMode: Gracefully</text>
+  <text x="620" y="898" text-anchor="middle" font-size="11" fill="#334155">Always re-prefers Priority 1</text>
+
+  <rect x="760" y="782" width="240" height="140" rx="8" fill="#ffffff" stroke="#a855f7" stroke-width="1.5"/>
+  <text x="880" y="802" text-anchor="middle" font-size="13" font-weight="bold" fill="#6d28d9">ClusterTaintPolicy</text>
+  <text x="880" y="822" text-anchor="middle" font-size="11" fill="#334155">Ready != True →</text>
+  <text x="880" y="840" text-anchor="middle" font-size="11" fill="#334155">add failover.karmada.io/unhealthy</text>
+  <text x="880" y="858" text-anchor="middle" font-size="11" fill="#334155">(NoExecute)</text>
+  <text x="880" y="878" text-anchor="middle" font-size="11" fill="#334155">Ready == True →</text>
+  <text x="880" y="898" text-anchor="middle" font-size="11" fill="#334155">taint auto-removed</text>
+
+  <text x="750" y="922" text-anchor="middle" font-size="11" font-style="italic" fill="#6d28d9">Requires controller-manager flags: --feature-gates=Failover=true --enable-no-execute-taint-eviction=true</text>
+
+  <!-- control lines -->
+  <line x1="330" y1="600" x2="600" y2="782" stroke="#7c3aed" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arrowDash)"/>
+  <line x1="1170" y1="600" x2="900" y2="782" stroke="#7c3aed" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arrowDash)"/>
+  <text x="420" y="700" font-size="11" fill="#7c3aed">watches health /</text>
+  <text x="420" y="714" font-size="11" fill="#7c3aed">schedules per affinity</text>
+
+  <!-- failover / fail-back loop legend -->
+  <rect x="60" y="970" width="1380" height="90" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="750" y="994" text-anchor="middle" font-size="14" font-weight="bold" fill="#b91c1c">Failover → Fail-back loop (cost-optimized: standby stays idle otherwise)</text>
+  <text x="750" y="1016" text-anchor="middle" font-size="12" fill="#334155">cluster-1 down → ClusterTaintPolicy taints it → controller-manager evicts + reschedules onto cluster-2 → Cloudflare/HAProxy monitor shifts traffic</text>
+  <text x="750" y="1038" text-anchor="middle" font-size="12" fill="#334155">cluster-1 recovers → taint auto-removed → PropagationPolicy reschedules back to Priority 1 (cluster-1) → traffic shifts back → cluster-2 goes idle again</text>
+</svg>
