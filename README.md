@@ -59,7 +59,7 @@ The control plane distributes workloads across both Kubernetes clusters, automat
 # 🛠 Technologies Used
 
 - Kubernetes
-- Karmada v1.15.1
+- Karmada v1.18.0
 - K3s
 - HAProxy
 - Cloudflare Load Balancer

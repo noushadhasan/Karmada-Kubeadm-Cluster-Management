@@ -21,7 +21,7 @@ kubectl version --client
 # Install the Karmada CLI
 ```bash
 wget https://github.com/karmada-io/karmada/releases/\ 
-download/v1.15.1/karmadactl-linux-amd64.tgz 
+download/v1.18.0/karmadactl-linux-amd64.tgz 
  
 tar -zxvf karmadactl-linux-amd64.tgz 
 sudo mv karmadactl /usr/local/bin/ 
@@ -42,7 +42,7 @@ kubectl get nodes
 ```
 # Initialize Karmada Control Panel
 ```bash
-sudo karmadactl init --kubeconfig=/home/ubuntu/.kube/config --crds=https://github.com/karmada-io/karmada/releases/download/v1.15.1/crds.tar.gz
+sudo karmadactl init --kubeconfig=/home/ubuntu/.kube/config --crds=https://github.com/karmada-io/karmada/releases/download/v1.18.0/crds.tar.gz
 sudo ls -lah /etc/karmada/
 kubectl --kubeconfig=/etc/karmada/karmada-apiserver.config get clusters
 kubectl get pods -n karmada-system -o wide
