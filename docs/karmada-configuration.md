@@ -15,8 +15,7 @@ kubectl --kubeconfig=/home/ubuntu/cluster-1.config -n default \
 ## Clean the metadata
 Install kubectl-neat to strip runtime metadata:
 ```bash
-wget https://github.com/itaysk/kubectl-neat/releases/\
-download/v2.0.4/kubectl-neat_linux_amd64.tar.gz
+wget https://github.com/itaysk/kubectl-neat/releases/\download/v2.0.4/kubectl-neat_linux_amd64.tar.gz
 
 tar -xzf kubectl-neat_linux_amd64.tar.gz
 chmod +x kubectl-neat
