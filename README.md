@@ -47,7 +47,7 @@ See [Production Failover Hardening](docs/production-failover-hardening.md) for e
 
 The wider pipeline this cycle feeds into: CI/CD → Karmada Control Plane → PropagationPolicy → member clusters → edge Load Balancer (Cloudflare or HAProxy) → DNS → users.
 
-### HAProxy Ingress Design (Optional)
+### Active/Active High Availability: Dual-Cluster Propagation with HAProxy (Optional)
 
 ![Karmada HAProxy Architecture](assets/karmada-haproxy-blog-architecture.gif)
 
